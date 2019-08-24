@@ -97,7 +97,7 @@ class ThumbnailLinkCell: LinkCell, ImageDownloadable, ImageViewAnimator {
         let views = [
             "thumbnailImageView": thumbnailImageView,
             "titleTextView": titleTextView
-            ] as [String : Any]
+            ] as [String: Any]
         let metrics = [
             "horizontalCenterMargin": ThumbnailLinkCell.horizontalCenterMargin
         ]
@@ -142,7 +142,7 @@ class ThumbnailLinkCell: LinkCell, ImageDownloadable, ImageViewAnimator {
         let views = [
             "titleAndThumbnailBaseView": titleAndThumbnailBaseView,
             "contentInfoView": contentInfoView,
-            "contentToolbar": contentToolbar,
+            "contentToolbar": contentToolbar
             ]
         let metric = [
             "horizontalLeftMargin": ThumbnailLinkCell.horizontalLeftMargin,
@@ -199,9 +199,9 @@ class ThumbnailLinkCell: LinkCell, ImageDownloadable, ImageViewAnimator {
     
     // MARK: - Action
     
-    func didTapGesture(recognizer: UITapGestureRecognizer) {
+    @objc func didTapGesture(recognizer: UITapGestureRecognizer) {
         if let container = container as? ThumbnailLinkContainer {
-            let userInfo: [String:Any] = ["link": container.link, "thumbnail": container.thumbnails[0], "view": thumbnailImageView]
+            let userInfo: [String: Any] = ["link": container.link, "thumbnail": container.thumbnails[0], "view": thumbnailImageView]
             NotificationCenter.default.post(name: LinkCellDidTapThumbnailNotification, object: nil, userInfo: userInfo)
         }
     }
@@ -243,7 +243,7 @@ class ThumbnailLinkCell: LinkCell, ImageDownloadable, ImageViewAnimator {
         activityIndicatorViewOnThumbnail.stopAnimating()
     }
     
-    func didFinishDownloading(notification: NSNotification) {
+    @objc func didFinishDownloading(notification: NSNotification) {
         if let userInfo = notification.userInfo, let _ = userInfo[ImageDownloadableSenderKey], let url = userInfo[ImageDownloadableUrlKey] as? URL {
             if let container = container as? ThumbnailLinkContainer {
                 if container.thumbnailURL == url {

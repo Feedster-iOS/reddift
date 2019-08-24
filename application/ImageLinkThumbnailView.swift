@@ -56,9 +56,9 @@ class ImageLinkThumbnailView: UIView, ImageDownloadable {
                 viewTupleForURL[md5] = (imageViews[i], activityIndicators[i])
                 
                 switch thumbnails[i] {
-                case .Image(_, _):
+                case .Image:
                     playIconImageViews[i].isHidden = true
-                case .Movie(_, _, _):
+                case .Movie:
                     playIconImageViews[i].isHidden = false
                 }
             }
@@ -219,7 +219,7 @@ class ImageLinkThumbnailView: UIView, ImageDownloadable {
         }
     }
     
-    func didFinishDownloading(notification: NSNotification) {
+    @objc func didFinishDownloading(notification: NSNotification) {
         if let userInfo = notification.userInfo, let _ = userInfo[ImageDownloadableSenderKey] {
             if let _ = userInfo[ImageDownloadableErrorKey] as? NSError, let url = userInfo[ImageDownloadableUrlKey] as? URL {
                 do {

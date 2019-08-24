@@ -21,7 +21,7 @@ class CommentThumbnailView: UIView, ImageDownloadable {
     
     var viewTupleForURL: [String: (UIImageView, UIActivityIndicatorView)] = [:]
     var activityIndicators: [UIActivityIndicatorView] = []
-    var activityIndicatorURLDictionary: [String:UIActivityIndicatorView] = [:]
+    var activityIndicatorURLDictionary: [String: UIActivityIndicatorView] = [:]
     let numberOfRows: Int
     var numberOfThumbnails: Int
     
@@ -197,7 +197,7 @@ extension CommentThumbnailView {
         }
     }
     
-    func didFinishDownloading(notification: NSNotification) {
+    @objc func didFinishDownloading(notification: NSNotification) {
         if let userInfo = notification.userInfo, let _ = userInfo[ImageDownloadableSenderKey], let url = userInfo[ImageDownloadableUrlKey] as? URL {
             if let _ = thumbnails.index(where: {$0.thumbnailURL == url}) {
                 do {

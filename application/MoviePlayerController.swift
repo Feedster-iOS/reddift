@@ -14,7 +14,7 @@ class MoviePlayerController: ImageViewController {
     let movieView: MoviePlayView
     let movieURL: URL
     
-    func didChangeStatus(notification: Notification) {
+    @objc func didChangeStatus(notification: Notification) {
         var f = movieView.frame
         f.size = movieView.presentationSize
         movieView.frame = f
@@ -67,7 +67,7 @@ class MoviePlayerController: ImageViewController {
     override init(index: Int, thumbnails: [Thumbnail], isOpenedBy3DTouch: Bool = false) {
         let thumbnail = thumbnails[index]
         switch thumbnail {
-        case .Image(_, _):
+        case .Image:
             movieURL = URL(string: "")!
         case .Movie(let movieURL, _, _):
             self.movieURL = movieURL

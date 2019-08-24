@@ -128,11 +128,11 @@ class MoviePlayerViewToolbar: UIToolbar {
         slider.value = Float(all_seconds)
         let min = all_seconds / 60
         let sec = all_seconds % 60
-        timeLabel.text = String(format:"%02d:%02d", min, sec)
+        timeLabel.text = String(format: "%02d:%02d", min, sec)
     }
     
     // Delegate method push the play button on the toolbar
-    func play(sender: AnyObject) {
+    @objc func play(sender: AnyObject) {
         if let del = toolbarDelegate {
             del.didTapPlayButtonOnMoviePlayerViewToolbar(toolbar: self)
             toggleToPauseButton()
@@ -140,7 +140,7 @@ class MoviePlayerViewToolbar: UIToolbar {
     }
     
     // Delegate method push the pause button on the toolbar
-    func pause(sender: AnyObject) {
+    @objc func pause(sender: AnyObject) {
         if let del = toolbarDelegate {
             del.didTapPauseButtonOnMoviePlayerViewToolbar(toolbar: self)
             toggleToPlayButton()
@@ -148,7 +148,7 @@ class MoviePlayerViewToolbar: UIToolbar {
     }
     
     // Delegate method push the slider on the toolbar
-    func didTouchUpInside(sender: AnyObject) {
+    @objc func didTouchUpInside(sender: AnyObject) {
         print("didTouchUpInside:")
         
         let t = CMTime(value: Int64(slider.value * Float(duration.timescale)), timescale: duration.timescale)
@@ -159,7 +159,7 @@ class MoviePlayerViewToolbar: UIToolbar {
         }
     }
     
-    func didTouchDown(sender: AnyObject) {
+    @objc func didTouchDown(sender: AnyObject) {
         print("didTouchDown:")
         if let del = toolbarDelegate {
             del.didTapPauseButtonOnMoviePlayerViewToolbar(toolbar: self)
@@ -167,12 +167,12 @@ class MoviePlayerViewToolbar: UIToolbar {
         }
     }
     
-    func draggingInside(sender: AnyObject) {
+    @objc func draggingInside(sender: AnyObject) {
         print("draggingInside:")
         let seconds = Int(slider.value)
         let min = seconds / 60
         let sec = seconds % 60
-        timeLabel.text = String(format:"%02d:%02d", min, sec)
+        timeLabel.text = String(format: "%02d:%02d", min, sec)
     }
     
     override init(frame: CGRect) {
