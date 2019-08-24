@@ -6,21 +6,20 @@
 //  Copyright (c) 2015年 sonson. All rights reserved.
 //
 
-import Foundation
-
-#if os(iOS)
-    import UIKit
-#elseif os(macOS)
-    import Cocoa
-#endif
+import UIKit
+import SafariServices
 
 /**
 Class for opening OAuth2 authorizing page and handling redirect URL.
 This class is used by singleton model.
 You must access this class's instance by only OAuth2Authorizer.sharedInstance.
 */
-public class OAuth2Authorizer {
+public class OAuth2Authorizer: NSObject, SFSafariViewControllerDelegate {
     private var state = ""
+    private var authorizationCompletion: ((Result<OAuth2Token>) -> Void)?
+    
+    private weak var safariViewController: SFSafariViewController?
+    private var authenticationSession: OAuth2AuthenticationSessionProtocol?
     /**
     Singleton model.
     */
@@ -29,9 +28,9 @@ public class OAuth2Authorizer {
     /**
     Open OAuth2 page to try to authorize with all scopes in Safari.app.
     */
-    public func challengeWithAllScopes() throws {
+    public func challengeWithAllScopes(byPresenting presentingViewController: UIViewController, completion: @escaping (Result<OAuth2Token>) -> Void) throws {
         do {
-            try self.challengeWithScopes(["identity", "edit", "flair", "history", "modconfig", "modflair", "modlog", "modposts", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "submit", "subscribe", "vote", "wikiedit", "wikiread"])
+            try self.challengeWithScopes(["identity", "edit", "flair", "history", "modconfig", "modflair", "modlog", "modposts", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "submit", "subscribe", "vote", "wikiedit", "wikiread"], byPresenting: presentingViewController, completion: completion)
         } catch {
             throw error
         }
@@ -42,7 +41,7 @@ public class OAuth2Authorizer {
     
     - parameter scopes: Scope you want to get authorizing. You can check all scopes at https://www.reddit.com/dev/api/oauth.
     */
-    public func challengeWithScopes(_ scopes: [String]) throws {
+    public func challengeWithScopes(_ scopes: [String], byPresenting presentingViewController: UIViewController, completion: @escaping (Result<OAuth2Token>) -> Void) throws {
         let commaSeparatedScopeString = scopes.joined(separator: ",")
         
         let length = 64
@@ -54,15 +53,33 @@ public class OAuth2Authorizer {
             self.state = data.base64EncodedString(options: .endLineWithLineFeed)
             guard let authorizationURL = URL(string:"https://www.reddit.com/api/v1/authorize.compact?client_id=" + Config.sharedInstance.clientID + "&response_type=code&state=" + self.state + "&redirect_uri=" + Config.sharedInstance.redirectURI + "&duration=permanent&scope=" + commaSeparatedScopeString)
                 else { throw ReddiftError.canNotCreateURLRequestForOAuth2Page as NSError }
-#if os(iOS)
-                if #available (iOS 10.0, *) {
-                    UIApplication.shared.open(authorizationURL, options: [:], completionHandler: nil)
-                } else {
-                    UIApplication.shared.openURL(authorizationURL)
+            
+            authorizationCompletion = { (result: Result<OAuth2Token>) in
+                DispatchQueue.main.async {
+                    completion(result)
                 }
-#elseif os(macOS)
-                NSWorkspace.shared.open(authorizationURL)
-#endif
+            }
+            
+            if #available(iOS 11.0, *) {
+                authenticationSession = OAuth2AuthenticationSession.init(url: authorizationURL, callbackURLScheme: Config.sharedInstance.redirectURIScheme, completionHandler: { [weak self] redirectURL, error in
+                    guard let `self` = self else { return }
+                    
+                    if let redirectURL = redirectURL {
+                        _ = self.receiveRedirect(redirectURL)
+                        return
+                    }
+                    
+                    self.authorizationCompletion?(Result<OAuth2Token>(error: error! as NSError))
+                    self.authorizationCompletion = nil
+                })
+                
+                authenticationSession!.start()
+            } else {
+                let sfc = SFSafariViewController(url: authorizationURL)
+                safariViewController = sfc
+                sfc.delegate = self
+                presentingViewController.present(sfc, animated: true, completion: nil)
+            }
         } else {
             throw ReddiftError.canNotAllocateDataToCreateURLForOAuth2 as NSError
         }
@@ -75,7 +92,11 @@ public class OAuth2Authorizer {
     - parameter completion: Callback block is execeuted when the access token has been acquired using URL.
     - returns: Returns if the URL object is parsed correctly.
     */
-    public func receiveRedirect(_ url: URL, completion: @escaping (Result<OAuth2Token>) -> Void) -> Bool {
+    public func receiveRedirect(_ url: URL) -> Bool {
+        guard let completion = authorizationCompletion, safariViewController != nil || authenticationSession != nil else {
+            return false
+        }
+        
         var parameters: [String:String] = [:]
         let currentState = self.state
         self.state = ""
@@ -84,8 +105,13 @@ public class OAuth2Authorizer {
                 parameters = temp
             }
         }
+        
         if let code = parameters["code"], let state = parameters["state"] {
-            if code.characters.count > 0 && state == currentState {
+            safariViewController?.dismiss(animated: true, completion: nil)
+            authorizationCompletion = nil
+            authenticationSession = nil
+            
+            if !code.isEmpty && state == currentState {
                 do {
                     try OAuth2Token.getOAuth2Token(code, completion: completion)
                     return true
@@ -97,4 +123,15 @@ public class OAuth2Authorizer {
         }
         return false
     }
+    
+    // MARK: - SFSafariViewControllerDelegate
+    public func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        if let completion = authorizationCompletion {
+            authorizationCompletion = nil
+            
+            let error = NSError(domain: "ua.ky1vstar.reddift", code: -4, userInfo: [NSLocalizedDescriptionKey: "Authorization Cancelled"])
+            completion(Result<OAuth2Token>(error: error))
+        }
+    }
+    
 }

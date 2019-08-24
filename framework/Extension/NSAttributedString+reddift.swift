@@ -93,7 +93,7 @@ extension URLComponents {
     /// Returns true when URL's filename has image's file extension(such as gif, jpg, png).
     public var hasImageFileExtension: Bool {
         let path = self.path
-            if let r = regexForHasImageFileExtension.firstMatch(in: path, options: [], range: NSRange(location: 0, length: path.characters.count)) {
+            if let r = regexForHasImageFileExtension.firstMatch(in: path, options: [], range: NSRange(location: 0, length: (self.path as NSString).length)) {
                 return r.range(at: 1).length > 0
             }
         return false

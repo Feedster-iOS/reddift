@@ -227,7 +227,7 @@ public struct Link: Thing, Created, Votable {
     Used for streaming video. Detailed information about the video and it's origins are placed here
     example:
     */
-    public let media: Media?
+    public let media: Media
     /**
     example: false
     */
@@ -241,6 +241,11 @@ public struct Link: Thing, Created, Votable {
     example: .admin
     */
     public let distinguished: DistinguishType
+    
+    public let preview: JSONDictionary
+    public let subredditDetail: Subreddit
+    public let postHint: String
+    public let crosspostParentList: [Link]
 	
     public init(id: String) {
         self.id = id
@@ -290,6 +295,11 @@ public struct Link: Thing, Created, Votable {
         reportReasons = []
         modReports = []
         secureMediaEmbed = nil
+        
+        preview = [:]
+        postHint = ""
+        crosspostParentList = []
+        subredditDetail = Subreddit(json: [:])
     }
     
     /**
@@ -367,5 +377,10 @@ public struct Link: Thing, Created, Votable {
         reportReasons = []
         modReports = []
         secureMediaEmbed = nil
+        
+        preview = data["preview"] as? JSONDictionary ?? [:]
+        postHint = data["post_hint"] as? String ?? ""
+        crosspostParentList = (data["crosspost_parent_list"] as? [JSONDictionary] ?? []).map({ Link(json: $0) })
+        subredditDetail = Subreddit(json: data["sr_detail"] as? JSONDictionary ?? [:])
     }
 }

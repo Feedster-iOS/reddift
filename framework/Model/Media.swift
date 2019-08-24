@@ -20,6 +20,9 @@ public struct Media {
     oembed object
     */
     public let oembed: Oembed
+    
+    public let redditVideo: JSONDictionary
+    
     /**
     Update each property with JSON object.
     
@@ -28,6 +31,7 @@ public struct Media {
     public init(json: JSONDictionary) {
 		type = json["type"] as? String ?? ""
         oembed = Oembed(json: json["oembed"] as? JSONDictionary ?? [:])
+        redditVideo = json["reddit_video"] as? JSONDictionary ?? [:]
     }
     
     public var string: String {

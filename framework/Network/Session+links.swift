@@ -271,7 +271,8 @@ extension Session {
             "children": commaSeparatedChildren,
             "link_id": link.name,
             "sort": sort.type,
-            "api_type": "json"
+            "api_type": "json",
+            "raw_json": "1"
         ]
         if let id = id {
             parameter["id"] = id

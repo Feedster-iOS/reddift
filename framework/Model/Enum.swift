@@ -154,6 +154,9 @@ public enum LinkSortType {
     case top
     case hot
     case new
+    case best
+    case rising
+    case gilded
     
     public var path: String {
         switch self {
@@ -165,7 +168,14 @@ public enum LinkSortType {
             return "/hot"
         case .new:
             return "/new"
+        case .best:
+            return "/best"
+        case .rising:
+            return "/rising"
+        case .gilded:
+            return "/gilded"
         }
+        
     }
     
     public var description: String {
@@ -178,6 +188,12 @@ public enum LinkSortType {
             return "Sort by Hot"
         case .new:
             return "Sort by New"
+        case .best:
+            return "Sort by Best"
+        case .rising:
+            return "Sort by Rising"
+        case .gilded:
+            return "Sort by Gilded"
         }
     }
 }

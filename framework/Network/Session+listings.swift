@@ -47,7 +47,7 @@ extension Session {
      */
     @discardableResult
     public func getArticles(_ link: Link, sort: CommentSort, comments: [String]? = nil, depth: Int? = nil, limit: Int? = nil, context: Int? = nil, completion: @escaping (Result<(Listing, Listing)>) -> Void) throws -> URLSessionDataTask {
-        var parameter = ["sort": sort.type, "showmore": "True"]
+        var parameter = ["sort": sort.type, "showmore": "True", "raw_json": "1"]
         if let depth = depth {
             parameter["depth"] = "\(depth)"
         }
@@ -87,18 +87,27 @@ extension Session {
      */
     @discardableResult
     public func getList(_ paginator: Paginator, subreddit: SubredditURLPath?, sort: LinkSortType, timeFilterWithin: TimeFilterWithin, limit: Int = 25, completion: @escaping (Result<Listing>) -> Void) throws -> URLSessionDataTask {
-        do {
-            switch sort {
-            case .controversial:
-                return try getList(paginator, subreddit: subreddit, privateSortType: .controversial, timeFilterWithin: timeFilterWithin, limit: limit, completion: completion)
-            case .top:
-                return try getList(paginator, subreddit: subreddit, privateSortType: .top, timeFilterWithin: timeFilterWithin, limit: limit, completion: completion)
-            case .new:
-                return try getNewOrHotList(paginator, subreddit: subreddit, type: "new", limit:limit, completion: completion)
-            case .hot:
-                return try getNewOrHotList(paginator, subreddit: subreddit, type: "hot", limit:limit, completion: completion)
-            }
-        } catch { throw error }
+        let parameter = paginator.dictionaryByAdding(parameters: [
+            "limit": "\(limit)",
+            "show": "all",
+            "sr_detail": "1",
+            "feature": "link_preview",
+            "always_show_media": "1",
+            "raw_json": "1",
+            "t": timeFilterWithin.param
+            ])
+        var path = "\(sort.path).json"
+        if let subreddit = subreddit { path = "\(subreddit.path)\(sort.path).json" }
+        guard let request = URLRequest.requestForOAuth(with: baseURL, path:path, parameter:parameter, method:"GET", token:token)
+            else { throw ReddiftError.canNotCreateURLRequest as NSError }
+        let closure = {(data: Data?, response: URLResponse?, error: NSError?) -> Result<Listing> in
+            return Result(from: Response(data: data, urlResponse: response), optional:error)
+                .flatMap(response2Data)
+                .flatMap(data2Json)
+                .flatMap(json2RedditAny)
+                .flatMap(redditAny2Object)
+        }
+        return executeTask(request, handleResponse: closure, completion: completion)
     }
     
     /**
@@ -117,7 +126,10 @@ extension Session {
         let parameter = paginator.dictionaryByAdding(parameters: [
             "limit": "\(limit)",
             "show": "all",
-//          "sr_detail": "true",
+            "sr_detail": "1",
+            "feature": "link_preview",
+            "always_show_media": "1",
+            "raw_json": "1",
             "t": timeFilterWithin.param
         ])
         var path = "\(privateSortType.path).json"
@@ -178,7 +190,10 @@ extension Session {
     func getNewOrHotList(_ paginator: Paginator, subreddit: SubredditURLPath?, type: String, limit: Int = 25, completion: @escaping (Result<Listing>) -> Void) throws -> URLSessionDataTask {
         let parameter = paginator.dictionaryByAdding(parameters: [
             "limit": "\(limit)",
-            //            "sr_detail": "true",
+            "sr_detail": "1",
+            "feature": "link_preview",
+            "always_show_media": "1",
+            "raw_json": "1",
             "show": "all",
             ])
         var path = "\(type).json"
